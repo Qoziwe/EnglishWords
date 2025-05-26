@@ -157,6 +157,7 @@
         width: 80%;
         font-size: 1rem;
         touch-action: manipulation;
+        pointer-events: auto;
       }
 
       .translation,
@@ -240,6 +241,11 @@
         color: #000;
       }
 
+      .word-actions .edit {
+        background-color: var(--primary-color);
+        color: #000;
+      }
+
       .empty-message {
         text-align: center;
         padding: 2rem;
@@ -291,6 +297,79 @@
           font-size: 2.5rem;
         }
       }
+
+      /* Стили для модального окна редактирования */
+      .edit-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+      }
+
+      .edit-modal-content {
+        background-color: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .edit-modal h2 {
+        color: var(--primary-color);
+        margin-top: 0;
+      }
+
+      .edit-modal label {
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+
+      .edit-modal input,
+      .edit-modal textarea {
+        width: 100%;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        background-color: #252525;
+        color: var(--text-color);
+        border: 1px solid #333;
+        border-radius: 4px;
+      }
+
+      .edit-modal textarea {
+        min-height: 100px;
+      }
+
+      .edit-modal-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+
+      .edit-modal-buttons button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .edit-modal-save {
+        background-color: var(--secondary-color);
+        color: #000;
+      }
+
+      .edit-modal-cancel {
+        background-color: var(--error-color);
+        color: #000;
+      }
     </style>
   </head>
   <body>
@@ -307,7 +386,11 @@
         <h2>Добавить новые слова</h2>
         <textarea
           id="new-words"
-          placeholder="Введите слова на английском, каждое с новой строки"
+          placeholder="Введите слова на английском с переводами, каждое с новой строки. Формат: слово - перевод1, перевод2
+Пример:
+hello - привет, здравствуйте
+apple - яблоко
+cup of tea - это по моей части"
         ></textarea>
         <button id="save-words">Подтвердить</button>
       </div>
@@ -366,6 +449,20 @@
         let touchEndY = 0;
         let isDragging = false;
         let isTranslationButtonPressed = false;
+        let isProcessingSwipe = false;
+        let hasMoved = false;
+
+        // Функция для получения свежих данных из localStorage
+        function getWordsFromStorage() {
+          const words = JSON.parse(localStorage.getItem("englishWords") || "[]");
+          // Убеждаемся что у каждого слова есть все необходимые поля
+          return words.map(word => ({
+            word: word.word || "",
+            translations: Array.isArray(word.translations) ? word.translations : [],
+            synonyms: Array.isArray(word.synonyms) ? word.synonyms : [],
+            added: word.added || new Date().toISOString()
+          }));
+        }
 
         // Переключение страниц
         navButtons.forEach((btn) => {
@@ -393,28 +490,60 @@
           });
         });
 
-        // Сохранение слов
+        // Сохранение слов с переводами
         saveWordsBtn.addEventListener("click", function () {
           const wordsText = wordsTextarea.value.trim();
           if (!wordsText) return;
 
           const wordsArray = wordsText
             .split("\n")
-            .map((word) => word.trim())
-            .filter((word) => word.length > 0);
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
 
           // Получить текущие слова из localStorage
-          let currentWords = JSON.parse(
-            localStorage.getItem("englishWords") || "[]"
-          );
+          let currentWords = getWordsFromStorage();
 
-          // Добавить новые слова, избегая дубликатов
-          wordsArray.forEach((word) => {
-            const lowerWord = word.toLowerCase();
-            if (!currentWords.some((w) => w.word === lowerWord)) {
+          // Обработка каждой строки
+          wordsArray.forEach((line) => {
+            // Разделяем слово и переводы
+            const parts = line.split("-").map((part) => part.trim());
+            const word = parts[0].toLowerCase();
+
+            let translations = [];
+            if (parts.length > 1) {
+              // Разделяем переводы по запятым и убираем пустые
+              translations = parts[1]
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0);
+            }
+
+            // Проверяем, есть ли уже такое слово
+            const existingWordIndex = currentWords.findIndex(
+              (w) => w.word === word
+            );
+
+            if (existingWordIndex >= 0) {
+              // Обновляем существующее слово
+              if (translations.length > 0) {
+                // Добавляем новые переводы, избегая дубликатов
+                translations.forEach((translation) => {
+                  if (
+                    !currentWords[existingWordIndex].translations.includes(
+                      translation
+                    )
+                  ) {
+                    currentWords[existingWordIndex].translations.push(
+                      translation
+                    );
+                  }
+                });
+              }
+            } else {
+              // Добавляем новое слово
               currentWords.push({
-                word: lowerWord,
-                translations: [],
+                word: word,
+                translations: translations,
                 synonyms: [],
                 added: new Date().toISOString(),
               });
@@ -438,9 +567,7 @@
 
         // Обновление списка слов
         function updateWordsList() {
-          const words = JSON.parse(
-            localStorage.getItem("englishWords") || "[]"
-          );
+          const words = getWordsFromStorage();
           wordsList.innerHTML = "";
 
           if (words.length === 0) {
@@ -455,6 +582,7 @@
                         <span>${wordObj.word}</span>
                         <div class="word-actions">
                             <button class="translate" data-word="${wordObj.word}">Перевод</button>
+                            <button class="edit" data-word="${wordObj.word}">Изменить</button>
                             <button class="delete" data-word="${wordObj.word}">Удалить</button>
                         </div>
                     `;
@@ -475,16 +603,91 @@
               showWordDetails(wordToTranslate);
             });
           });
+
+          document.querySelectorAll(".edit").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const wordToEdit = this.getAttribute("data-word");
+              showEditModal(wordToEdit);
+            });
+          });
+        }
+
+        // Показать модальное окно редактирования
+        function showEditModal(word) {
+          const words = getWordsFromStorage();
+          const wordObj = words.find((w) => w.word === word);
+
+          if (!wordObj) return;
+
+          const modal = document.createElement("div");
+          modal.className = "edit-modal";
+          modal.innerHTML = `
+            <div class="edit-modal-content">
+              <h2>Редактирование: ${wordObj.word}</h2>
+              <label for="edit-translations">Переводы (через запятую):</label>
+              <textarea id="edit-translations">${wordObj.translations.join(
+                ", "
+              )}</textarea>
+              <label for="edit-synonyms">Синонимы (через запятую):</label>
+              <input type="text" id="edit-synonyms" value="${wordObj.synonyms.join(
+                ", "
+              )}">
+              <div class="edit-modal-buttons">
+                <button class="edit-modal-cancel">Отмена</button>
+                <button class="edit-modal-save">Сохранить</button>
+              </div>
+            </div>
+          `;
+
+          document.body.appendChild(modal);
+
+          // Обработчики кнопок
+          modal
+            .querySelector(".edit-modal-cancel")
+            .addEventListener("click", () => {
+              document.body.removeChild(modal);
+            });
+
+          modal
+            .querySelector(".edit-modal-save")
+            .addEventListener("click", () => {
+              const translations = modal
+                .querySelector("#edit-translations")
+                .value.split(",")
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0);
+
+              const synonyms = modal
+                .querySelector("#edit-synonyms")
+                .value.split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+
+              // Обновляем слово
+              wordObj.translations = translations;
+              wordObj.synonyms = synonyms;
+              updateWordInStorage(wordObj);
+
+              // Закрываем модальное окно
+              document.body.removeChild(modal);
+
+              // Обновляем список слов
+              updateWordsList();
+            });
+
+          // Закрытие по клику вне контента
+          modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+              document.body.removeChild(modal);
+            }
+          });
         }
 
         // Удаление слова
         function deleteWord(word) {
-          let words = JSON.parse(localStorage.getItem("englishWords") || "[]");
+          let words = getWordsFromStorage();
           words = words.filter((w) => w.word !== word);
           localStorage.setItem("englishWords", JSON.stringify(words));
-
-          // Обновить текущую сессию, если слово было в ней
-          wordsForSession = wordsForSession.filter((w) => w.word !== word);
 
           updateWordsList();
 
@@ -496,9 +699,7 @@
 
         // Показать детали слова
         function showWordDetails(word) {
-          const words = JSON.parse(
-            localStorage.getItem("englishWords") || "[]"
-          );
+          const words = getWordsFromStorage();
           const wordObj = words.find((w) => w.word === word);
 
           if (wordObj) {
@@ -552,9 +753,9 @@
 
         // Логика карточек
         function startCardSession() {
-          const words = JSON.parse(
-            localStorage.getItem("englishWords") || "[]"
-          );
+          // ВСЕГДА получаем свежие данные из localStorage
+          const words = getWordsFromStorage();
+          
           if (words.length === 0) {
             wordDisplay.textContent = "Нет слов для изучения";
             showTranslationBtn.style.display = "none";
@@ -563,20 +764,40 @@
             return;
           }
 
-          // Перемешать слова
-          wordsForSession = [...words].sort(() => Math.random() - 0.5);
+          // Создаем глубокую копию и перемешиваем
+          wordsForSession = words.map(word => ({
+            word: word.word,
+            translations: [...word.translations],
+            synonyms: [...word.synonyms],
+            added: word.added
+          })).sort(() => Math.random() - 0.5);
+          
           currentCardIndex = 0;
+          isProcessingSwipe = false;
           showNextCard();
         }
 
         function showNextCard() {
+          if (wordsForSession.length === 0) {
+            wordDisplay.textContent = "Все слова изучены!";
+            showTranslationBtn.style.display = "none";
+            translationDiv.style.display = "none";
+            synonymsDiv.style.display = "none";
+            return;
+          }
+
+          // Если дошли до конца списка, начинаем сначала
           if (currentCardIndex >= wordsForSession.length) {
-            // Если все слова пройдены, начать заново
+            currentCardIndex = 0;
+          }
+
+          const currentWord = wordsForSession[currentCardIndex];
+          if (!currentWord) {
+            // Если слово не найдено, начинаем сессию заново
             startCardSession();
             return;
           }
 
-          const currentWord = wordsForSession[currentCardIndex];
           wordDisplay.textContent = currentWord.word;
           translationDiv.classList.add("hidden");
           synonymsDiv.classList.add("hidden");
@@ -588,12 +809,24 @@
           card.style.transition = "none";
           swipeLeftMessage.style.opacity = "0";
           swipeRightMessage.style.opacity = "0";
+          
+          // Сбрасываем флаги
+          isProcessingSwipe = false;
+          isDragging = false;
+          hasMoved = false;
         }
 
-        // Получение перевода через LibreTranslate (бесплатный API)
+        // Получение перевода через prompt
         function getTranslation(word) {
-          const translation = prompt(`Введите перевод для слова "${word}":`);
-          return translation ? [translation] : ["перевод не указан"];
+          const translation = prompt(
+            `Введите перевод для слова "${word}":\n(Несколько переводов можно указать через запятую)`
+          );
+          return translation
+            ? translation
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0)
+            : null;
         }
 
         // Получение синонимов через Datamuse API (бесплатный)
@@ -616,7 +849,16 @@
         // Показать перевод
         showTranslationBtn.addEventListener("click", async function (e) {
           e.stopPropagation();
+          e.preventDefault();
+          
+          if (isTranslationButtonPressed || isProcessingSwipe) return;
+          
           isTranslationButtonPressed = true;
+
+          if (currentCardIndex >= wordsForSession.length || !wordsForSession[currentCardIndex]) {
+            isTranslationButtonPressed = false;
+            return;
+          }
 
           const currentWord = wordsForSession[currentCardIndex];
           const originalText = this.textContent;
@@ -624,29 +866,40 @@
           this.disabled = true;
 
           try {
-            if (currentWord.translations.length === 0) {
-              currentWord.translations = getTranslation(currentWord.word);
+            // Проверяем переводы
+            if (!currentWord.translations || currentWord.translations.length === 0) {
+              const newTranslations = getTranslation(currentWord.word);
+              if (!newTranslations) {
+                this.textContent = originalText;
+                this.disabled = false;
+                isTranslationButtonPressed = false;
+                return;
+              }
+              currentWord.translations = newTranslations;
               updateWordInStorage(currentWord);
+              // Обновляем слово в сессии
+              wordsForSession[currentCardIndex] = currentWord;
             }
 
-            if (currentWord.synonyms.length === 0) {
+            // Проверяем синонимы
+            if (!currentWord.synonyms || currentWord.synonyms.length === 0) {
               currentWord.synonyms = await getSynonyms(currentWord.word);
               updateWordInStorage(currentWord);
+              // Обновляем слово в сессии
+              wordsForSession[currentCardIndex] = currentWord;
             }
 
-            translationDiv.textContent = `Перевод: ${currentWord.translations.join(
-              ", "
-            )}`;
-            synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(
-              ", "
-            )}`;
+            // Показываем перевод и синонимы
+            translationDiv.textContent = `Перевод: ${currentWord.translations.join(", ")}`;
+            synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(", ")}`;
 
             translationDiv.classList.remove("hidden");
             synonymsDiv.classList.remove("hidden");
             this.style.display = "none";
-
-            wordsForSession[currentCardIndex] = currentWord;
+            
             if ("vibrate" in navigator) navigator.vibrate(30);
+          } catch (error) {
+            console.error("Ошибка при загрузке перевода:", error);
           } finally {
             this.textContent = originalText;
             this.disabled = false;
@@ -656,21 +909,26 @@
 
         // Обновить слово в хранилище
         function updateWordInStorage(updatedWord) {
-          let words = JSON.parse(localStorage.getItem("englishWords") || "[]");
+          let words = getWordsFromStorage();
           words = words.map((word) =>
             word.word === updatedWord.word ? updatedWord : word
           );
           localStorage.setItem("englishWords", JSON.stringify(words));
         }
 
-        // Обработка свайпов
+        // Обработка свайпов - только touch события
         card.addEventListener(
           "touchstart",
           function (e) {
-            if (isTranslationButtonPressed) return;
+            if (isTranslationButtonPressed || e.target === showTranslationBtn || isProcessingSwipe)
+              return;
+            
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
+            touchEndX = touchStartX;
+            touchEndY = touchStartY;
             isDragging = true;
+            hasMoved = false;
             card.style.transition = "none";
           },
           { passive: true }
@@ -679,7 +937,7 @@
         card.addEventListener(
           "touchmove",
           function (e) {
-            if (!isDragging || isTranslationButtonPressed) return;
+            if (!isDragging || isTranslationButtonPressed || isProcessingSwipe) return;
             e.preventDefault();
 
             touchEndX = e.touches[0].clientX;
@@ -687,6 +945,11 @@
 
             const diffX = touchEndX - touchStartX;
             const diffY = touchEndY - touchStartY;
+
+            // Отмечаем что было движение
+            if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
+              hasMoved = true;
+            }
 
             // Игнорируем вертикальные свайпы
             if (Math.abs(diffY) > Math.abs(diffX)) return;
@@ -717,7 +980,7 @@
         card.addEventListener(
           "touchend",
           function () {
-            if (!isDragging || isTranslationButtonPressed) return;
+            if (!isDragging || isTranslationButtonPressed || isProcessingSwipe) return;
             isDragging = false;
 
             const diffX = touchEndX - touchStartX;
@@ -726,7 +989,8 @@
             // Порог для срабатывания свайпа
             const threshold = window.innerWidth / 4;
 
-            if (absDiffX > threshold) {
+            // Только если было движение и превышен порог
+            if (hasMoved && absDiffX > threshold) {
               if (diffX < 0) {
                 // Свайп влево - удалить слово
                 deleteCurrentWord();
@@ -741,73 +1005,16 @@
               swipeLeftMessage.style.opacity = "0";
               swipeRightMessage.style.opacity = "0";
             }
+            
+            hasMoved = false;
           },
           { passive: true }
         );
 
-        // Для десктопов (на случай тестирования на ПК)
-        card.addEventListener("mousedown", function (e) {
-          if (e.target === showTranslationBtn || isTranslationButtonPressed)
-            return;
-          touchStartX = e.clientX;
-          touchStartY = e.clientY;
-          isDragging = true;
-          card.style.transition = "none";
-          e.preventDefault();
-        });
-
-        document.addEventListener("mousemove", function (e) {
-          if (!isDragging || isTranslationButtonPressed) return;
-
-          touchEndX = e.clientX;
-          touchEndY = e.clientY;
-
-          const diffX = touchEndX - touchStartX;
-          const diffY = touchEndY - touchStartY;
-
-          if (Math.abs(diffY) > Math.abs(diffX)) return;
-
-          const absDiffX = Math.abs(diffX);
-          const maxOffset = window.innerWidth / 3;
-          const offset = Math.min(absDiffX, maxOffset) * (diffX > 0 ? 1 : -1);
-          const rotate = offset / 20;
-
-          card.style.transform = `translateX(${offset}px) rotate(${rotate}deg)`;
-
-          if (diffX < 0) {
-            const opacity = Math.min(absDiffX / 150, 0.9);
-            swipeLeftMessage.style.opacity = opacity;
-            swipeRightMessage.style.opacity = "0";
-          } else {
-            const opacity = Math.min(absDiffX / 150, 0.9);
-            swipeRightMessage.style.opacity = opacity;
-            swipeLeftMessage.style.opacity = "0";
-          }
-        });
-
-        document.addEventListener("mouseup", function () {
-          if (!isDragging || isTranslationButtonPressed) return;
-          isDragging = false;
-
-          const diffX = touchEndX - touchStartX;
-          const absDiffX = Math.abs(diffX);
-          const threshold = window.innerWidth / 4;
-
-          if (absDiffX > threshold) {
-            if (diffX < 0) {
-              deleteCurrentWord();
-            } else {
-              repeatCurrentWord();
-            }
-          } else {
-            card.style.transition = "transform 0.3s ease-out";
-            card.style.transform = "translateX(0) rotate(0deg)";
-            swipeLeftMessage.style.opacity = "0";
-            swipeRightMessage.style.opacity = "0";
-          }
-        });
-
         function deleteCurrentWord() {
+          if (isProcessingSwipe || currentCardIndex >= wordsForSession.length) return;
+          isProcessingSwipe = true;
+
           const wordToDelete = wordsForSession[currentCardIndex].word;
 
           // Анимация удаления
@@ -821,20 +1028,32 @@
           }
 
           setTimeout(() => {
-            // Удаляем слово из хранилища
-            deleteWord(wordToDelete);
+            try {
+              // Удаляем слово из localStorage
+              let words = getWordsFromStorage();
+              words = words.filter((w) => w.word !== wordToDelete);
+              localStorage.setItem("englishWords", JSON.stringify(words));
 
-            // Удаляем из текущей сессии
-            wordsForSession = wordsForSession.filter(
-              (_, i) => i !== currentCardIndex
-            );
-            if (currentCardIndex >= wordsForSession.length)
-              currentCardIndex = 0;
-            showNextCard();
+              // Удаляем из текущей сессии
+              wordsForSession.splice(currentCardIndex, 1);
+              
+              // Корректируем индекс если нужно
+              if (currentCardIndex >= wordsForSession.length) {
+                currentCardIndex = 0;
+              }
+              
+              showNextCard();
+            } catch (error) {
+              console.error("Ошибка при удалении слова:", error);
+              isProcessingSwipe = false;
+            }
           }, 400);
         }
 
         function repeatCurrentWord() {
+          if (isProcessingSwipe || currentCardIndex >= wordsForSession.length) return;
+          isProcessingSwipe = true;
+
           // Анимация возврата
           card.style.transition = "transform 0.4s ease-out, opacity 0.4s";
           card.style.transform = "translateX(1000px) rotate(30deg)";
@@ -846,10 +1065,19 @@
           }
 
           setTimeout(() => {
-            // Добавляем слово в конец списка для повторения
-            wordsForSession.push(wordsForSession[currentCardIndex]);
-            currentCardIndex++;
-            showNextCard();
+            try {
+              // Добавляем текущее слово в конец списка для повторения
+              const currentWord = wordsForSession[currentCardIndex];
+              wordsForSession.push(currentWord);
+              
+              // Переходим к следующему слову
+              currentCardIndex++;
+              
+              showNextCard();
+            } catch (error) {
+              console.error("Ошибка при повторении слова:", error);
+              isProcessingSwipe = false;
+            }
           }, 400);
         }
 
