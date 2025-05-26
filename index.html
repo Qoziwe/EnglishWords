@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width-width, initial-scale=1.0" />
     <title>English Cards</title>
     <style>
       :root {
@@ -1034,8 +1034,8 @@ cup of tea - это по моей части"
               words = words.filter((w) => w.word !== wordToDelete);
               localStorage.setItem("englishWords", JSON.stringify(words));
 
-              // Удаляем из текущей сессии
-              wordsForSession.splice(currentCardIndex, 1);
+              // ИСПРАВЛЕНИЕ: Удаляем ВСЕ вхождения этого слова из текущей сессии
+              wordsForSession = wordsForSession.filter((w) => w.word !== wordToDelete);
               
               // Корректируем индекс если нужно
               if (currentCardIndex >= wordsForSession.length) {
