@@ -1,809 +1,877 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>English Cards</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<style>:root {
-    --bg-color: #121212;
-    --text-color: #e0e0e0;
-    --primary-color: #bb86fc;
-    --secondary-color: #03dac6;
-    --error-color: #cf6679;
-    --card-bg: #1e1e1e;
-}
+    <style>
+      :root {
+        --bg-color: #121212;
+        --text-color: #e0e0e0;
+        --primary-color: #bb86fc;
+        --secondary-color: #03dac6;
+        --error-color: #cf6679;
+        --card-bg: #1e1e1e;
+      }
 
-* {
-    box-sizing: border-box;
-}
+      * {
+        box-sizing: border-box;
+      }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    -webkit-tap-highlight-color: transparent;
-}
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-header {
-    background-color: #1e1e1e;
-    padding: 0.5rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-}
+      header {
+        background-color: #1e1e1e;
+        padding: 0.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
 
-nav {
-    display: flex;
-    justify-content: space-around;
-}
+      nav {
+        display: flex;
+        justify-content: space-around;
+      }
 
-.nav-btn {
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 0.8rem 0.5rem;
-    border-radius: 4px;
-    transition: background-color 0.3s;
-    font-size: 0.9rem;
-    text-align: center;
-    flex: 1;
-    margin: 0 2px;
-}
+      .nav-btn {
+        color: var(--text-color);
+        text-decoration: none;
+        padding: 0.8rem 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+        font-size: 0.9rem;
+        text-align: center;
+        flex: 1;
+        margin: 0 2px;
+      }
 
-.nav-btn:hover {
-    background-color: #333;
-}
+      .nav-btn:hover {
+        background-color: #333;
+      }
 
-.page {
-    padding: 1rem;
-    width: 100%;
-    margin: 0 auto;
-}
+      .page {
+        padding: 1rem;
+        width: 100%;
+        margin: 0 auto;
+      }
 
-.hidden {
-    display: none;
-}
+      .hidden {
+        display: none;
+      }
 
-#new-words {
-    width: 100%;
-    height: 40vh;
-    margin: 1rem 0;
-    padding: 0.8rem;
-    background-color: var(--card-bg);
-    color: var(--text-color);
-    border: 1px solid #333;
-    border-radius: 8px;
-    font-size: 1rem;
-    resize: none;
-}
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--secondary-color);
+        animation: spin 1s ease-in-out infinite;
+      }
 
-#save-words {
-    background-color: var(--primary-color);
-    color: #000;
-    border: none;
-    padding: 0.8rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    width: 100%;
-    font-size: 1rem;
-    margin-top: 0.5rem;
-}
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-#card-container {
-    position: relative;
-    width: 100%;
-    height: 60vh;
-    margin: 1rem auto;
-    perspective: 1000px;
-    touch-action: pan-y;
-}
+      #new-words {
+        width: 100%;
+        height: 40vh;
+        margin: 1rem 0;
+        padding: 0.8rem;
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid #333;
+        border-radius: 8px;
+        font-size: 1rem;
+        resize: none;
+      }
 
-#card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    transition: transform 0.2s ease-out;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    user-select: none;
-    touch-action: none;
-}
+      #save-words {
+        background-color: var(--primary-color);
+        color: #000;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+      }
 
-.word-display {
-    font-size: 2.2rem;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    word-break: break-word;
-}
+      #card-container {
+        position: relative;
+        width: 100%;
+        height: 60vh;
+        margin: 1rem auto;
+        perspective: 1000px;
+        touch-action: pan-y;
+      }
 
-.show-translation {
-    background-color: var(--secondary-color);
-    color: #000;
-    border: none;
-    padding: 0.8rem;
-    border-radius: 8px;
-    cursor: pointer;
-    display: block;
-    margin: 1rem auto 0;
-    font-weight: bold;
-    width: 80%;
-    font-size: 1rem;
-}
-
-.translation, .synonyms {
-    margin-top: 1rem;
-    padding: 1rem;
-    background-color: #252525;
-    border-radius: 8px;
-    font-size: 1rem;
-}
-
-.synonyms {
-    font-style: italic;
-    margin-bottom: 1rem;
-}
-
-.swipe-message {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 1rem 0.8rem;
-    border-radius: 8px;
-    font-weight: bold;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 0;
-    font-size: 1rem;
-    pointer-events: none;
-}
-
-.swipe-message.left {
-    left: 10px;
-    background-color: var(--error-color);
-    color: #000;
-}
-
-.swipe-message.right {
-    right: 10px;
-    background-color: var(--secondary-color);
-    color: #000;
-}
-
-#words-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#words-list li {
-    background-color: var(--card-bg);
-    padding: 1rem;
-    margin: 0.5rem 0;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.1rem;
-}
-
-.word-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.word-actions button {
-    padding: 0.5rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    min-width: 80px;
-}
-
-.word-actions .delete {
-    background-color: var(--error-color);
-    color: #000;
-}
-
-.word-actions .translate {
-    background-color: var(--secondary-color);
-    color: #000;
-}
-
-.empty-message {
-    text-align: center;
-    padding: 2rem;
-    color: #888;
-}
-
-/* Анимации */
-@keyframes cardSwipeLeft {
-    to {
-        transform: translateX(-1000px) rotate(-30deg);
-        opacity: 0;
-    }
-}
-
-@keyframes cardSwipeRight {
-    to {
-        transform: translateX(1000px) rotate(30deg);
-        opacity: 0;
-    }
-}
-
-/* Медиа-запросы для очень маленьких экранов */
-@media (max-width: 400px) {
-    .word-display {
-        font-size: 1.8rem;
-    }
-    
-    .word-actions {
+      #card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        transition: transform 0.2s ease-out;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
         flex-direction: column;
-        gap: 0.3rem;
-    }
-    
-    .word-actions button {
-        min-width: 60px;
-        padding: 0.3rem;
-    }
-}
+        justify-content: center;
+        user-select: none;
+        touch-action: none;
+      }
 
-/* Портретная ориентация */
-@media (orientation: portrait) {
-    #card-container {
-        height: 55vh;
-    }
-}
+      .word-display {
+        font-size: 2.2rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        word-break: break-word;
+      }
 
-/* Ландшафтная ориентация */
-@media (orientation: landscape) {
-    #card-container {
-        height: 70vh;
-    }
-    
-    .word-display {
-        font-size: 2.5rem;
-    }
-}</style>
-<body>
+      .show-translation {
+        background-color: var(--secondary-color);
+        color: #000;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: block;
+        margin: 1rem auto 0;
+        font-weight: bold;
+        width: 80%;
+        font-size: 1rem;
+        touch-action: manipulation;
+      }
+
+      .translation,
+      .synonyms {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #252525;
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+
+      .synonyms {
+        font-style: italic;
+        margin-bottom: 1rem;
+      }
+
+      .swipe-message {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 1rem 0.8rem;
+        border-radius: 8px;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 0;
+        font-size: 1rem;
+        pointer-events: none;
+      }
+
+      .swipe-message.left {
+        left: 10px;
+        background-color: var(--error-color);
+        color: #000;
+      }
+
+      .swipe-message.right {
+        right: 10px;
+        background-color: var(--secondary-color);
+        color: #000;
+      }
+
+      #words-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #words-list li {
+        background-color: var(--card-bg);
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.1rem;
+      }
+
+      .word-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .word-actions button {
+        padding: 0.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        min-width: 80px;
+      }
+
+      .word-actions .delete {
+        background-color: var(--error-color);
+        color: #000;
+      }
+
+      .word-actions .translate {
+        background-color: var(--secondary-color);
+        color: #000;
+      }
+
+      .empty-message {
+        text-align: center;
+        padding: 2rem;
+        color: #888;
+      }
+
+      @keyframes cardSwipeLeft {
+        to {
+          transform: translateX(-1000px) rotate(-30deg);
+          opacity: 0;
+        }
+      }
+
+      @keyframes cardSwipeRight {
+        to {
+          transform: translateX(1000px) rotate(30deg);
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 400px) {
+        .word-display {
+          font-size: 1.8rem;
+        }
+
+        .word-actions {
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+
+        .word-actions button {
+          min-width: 60px;
+          padding: 0.3rem;
+        }
+      }
+
+      @media (orientation: portrait) {
+        #card-container {
+          height: 55vh;
+        }
+      }
+
+      @media (orientation: landscape) {
+        #card-container {
+          height: 70vh;
+        }
+
+        .word-display {
+          font-size: 2.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
     <header>
-        <nav>
-            <a href="#add" class="nav-btn">Добавить</a>
-            <a href="#start" class="nav-btn">Начать</a>
-            <a href="#words" class="nav-btn">Слова</a>
-        </nav>
+      <nav>
+        <a href="#add" class="nav-btn">Добавить</a>
+        <a href="#start" class="nav-btn">Начать</a>
+        <a href="#words" class="nav-btn">Слова</a>
+      </nav>
     </header>
 
     <main>
-        <div id="add" class="page">
-            <h2>Добавить новые слова</h2>
-            <textarea id="new-words" placeholder="Введите слова на английском, каждое с новой строки"></textarea>
-            <button id="save-words">Подтвердить</button>
-        </div>
+      <div id="add" class="page">
+        <h2>Добавить новые слова</h2>
+        <textarea
+          id="new-words"
+          placeholder="Введите слова на английском, каждое с новой строки"
+        ></textarea>
+        <button id="save-words">Подтвердить</button>
+      </div>
 
-        <div id="start" class="page hidden">
-            <div id="card-container">
-                <div id="card">
-                    <div class="word-display"></div>
-                    <button class="show-translation">Показать перевод</button>
-                    <div class="translation hidden"></div>
-                    <div class="synonyms hidden"></div>
-                </div>
-                <div class="swipe-message left">Удалить слово</div>
-                <div class="swipe-message right">Повторить слово</div>
-            </div>
+      <div id="start" class="page hidden">
+        <div id="card-container">
+          <div id="card">
+            <div class="word-display"></div>
+            <button class="show-translation">Показать перевод</button>
+            <div class="translation hidden"></div>
+            <div class="synonyms hidden"></div>
+          </div>
+          <div class="swipe-message left">Удалить слово</div>
+          <div class="swipe-message right">Повторить слово</div>
         </div>
+      </div>
 
-        <div id="words" class="page hidden">
-            <h2>Ваши слова</h2>
-            <ul id="words-list"></ul>
-        </div>
+      <div id="words" class="page hidden">
+        <h2>Ваши слова</h2>
+        <ul id="words-list"></ul>
+      </div>
     </main>
 
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Элементы страницы
-    const pages = {
-        add: document.getElementById('add'),
-        start: document.getElementById('start'),
-        words: document.getElementById('words')
-    };
-    
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const wordsTextarea = document.getElementById('new-words');
-    const saveWordsBtn = document.getElementById('save-words');
-    const cardContainer = document.getElementById('card-container');
-    const card = document.getElementById('card');
-    const wordDisplay = document.querySelector('.word-display');
-    const showTranslationBtn = document.querySelector('.show-translation');
-    const translationDiv = document.querySelector('.translation');
-    const synonymsDiv = document.querySelector('.synonyms');
-    const wordsList = document.getElementById('words-list');
-    
-    // Сообщения при свайпе
-    const swipeLeftMessage = document.querySelector('.swipe-message.left');
-    const swipeRightMessage = document.querySelector('.swipe-message.right');
-    
-    // Переменные для свайпа
-    let currentCardIndex = 0;
-    let wordsForSession = [];
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
-    let isDragging = false;
-    
-    // Переключение страниц
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
+      document.addEventListener("DOMContentLoaded", function () {
+        // Элементы страницы
+        const pages = {
+          add: document.getElementById("add"),
+          start: document.getElementById("start"),
+          words: document.getElementById("words"),
+        };
+
+        const navButtons = document.querySelectorAll(".nav-btn");
+        const wordsTextarea = document.getElementById("new-words");
+        const saveWordsBtn = document.getElementById("save-words");
+        const cardContainer = document.getElementById("card-container");
+        const card = document.getElementById("card");
+        const wordDisplay = document.querySelector(".word-display");
+        const showTranslationBtn = document.querySelector(".show-translation");
+        const translationDiv = document.querySelector(".translation");
+        const synonymsDiv = document.querySelector(".synonyms");
+        const wordsList = document.getElementById("words-list");
+
+        // Сообщения при свайпе
+        const swipeLeftMessage = document.querySelector(".swipe-message.left");
+        const swipeRightMessage = document.querySelector(
+          ".swipe-message.right"
+        );
+
+        // Переменные для свайпа
+        let currentCardIndex = 0;
+        let wordsForSession = [];
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        let isDragging = false;
+        let isTranslationButtonPressed = false;
+
+        // Переключение страниц
+        navButtons.forEach((btn) => {
+          btn.addEventListener("click", function (e) {
             e.preventDefault();
-            const target = this.getAttribute('href').substring(1);
-            
+            const target = this.getAttribute("href").substring(1);
+
             // Скрыть все страницы
-            Object.values(pages).forEach(page => page.classList.add('hidden'));
-            
+            Object.values(pages).forEach((page) =>
+              page.classList.add("hidden")
+            );
+
             // Показать выбранную страницу
-            pages[target].classList.remove('hidden');
-            
+            pages[target].classList.remove("hidden");
+
             // Если это страница слов, обновить список
-            if (target === 'words') {
-                updateWordsList();
+            if (target === "words") {
+              updateWordsList();
             }
-            
+
             // Если это страница карточек, начать сессию
-            if (target === 'start') {
-                startCardSession();
+            if (target === "start") {
+              startCardSession();
             }
+          });
         });
-    });
-    
-    // Сохранение слов
-    saveWordsBtn.addEventListener('click', function() {
-        const wordsText = wordsTextarea.value.trim();
-        if (!wordsText) return;
-        
-        const wordsArray = wordsText.split('\n')
-            .map(word => word.trim())
-            .filter(word => word.length > 0);
-        
-        // Получить текущие слова из localStorage
-        let currentWords = JSON.parse(localStorage.getItem('englishWords') || '[]');
-        
-        // Добавить новые слова, избегая дубликатов
-        wordsArray.forEach(word => {
+
+        // Сохранение слов
+        saveWordsBtn.addEventListener("click", function () {
+          const wordsText = wordsTextarea.value.trim();
+          if (!wordsText) return;
+
+          const wordsArray = wordsText
+            .split("\n")
+            .map((word) => word.trim())
+            .filter((word) => word.length > 0);
+
+          // Получить текущие слова из localStorage
+          let currentWords = JSON.parse(
+            localStorage.getItem("englishWords") || "[]"
+          );
+
+          // Добавить новые слова, избегая дубликатов
+          wordsArray.forEach((word) => {
             const lowerWord = word.toLowerCase();
-            if (!currentWords.some(w => w.word === lowerWord)) {
-                currentWords.push({
-                    word: lowerWord,
-                    translations: [],
-                    synonyms: [],
-                    added: new Date().toISOString()
-                });
+            if (!currentWords.some((w) => w.word === lowerWord)) {
+              currentWords.push({
+                word: lowerWord,
+                translations: [],
+                synonyms: [],
+                added: new Date().toISOString(),
+              });
             }
-        });
-        
-        // Сохранить обновленный список
-        localStorage.setItem('englishWords', JSON.stringify(currentWords));
-        wordsTextarea.value = '';
-        
-        // Показать уведомление на мобильных
-        if ('vibrate' in navigator) {
-            navigator.vibrate(50); // Вибрация для подтверждения
-        }
-        
-        // Обновить список слов, если мы на этой странице
-        if (!pages.words.classList.contains('hidden')) {
+          });
+
+          // Сохранить обновленный список
+          localStorage.setItem("englishWords", JSON.stringify(currentWords));
+          wordsTextarea.value = "";
+
+          // Показать уведомление на мобильных
+          if ("vibrate" in navigator) {
+            navigator.vibrate(50);
+          }
+
+          // Обновить список слов, если мы на этой странице
+          if (!pages.words.classList.contains("hidden")) {
             updateWordsList();
-        }
-    });
-    
-    // Обновление списка слов
-    function updateWordsList() {
-        const words = JSON.parse(localStorage.getItem('englishWords') || '[]');
-        wordsList.innerHTML = '';
-        
-        if (words.length === 0) {
-            wordsList.innerHTML = '<li class="empty-message">Слова не добавлены</li>';
+          }
+        });
+
+        // Обновление списка слов
+        function updateWordsList() {
+          const words = JSON.parse(
+            localStorage.getItem("englishWords") || "[]"
+          );
+          wordsList.innerHTML = "";
+
+          if (words.length === 0) {
+            wordsList.innerHTML =
+              '<li class="empty-message">Слова не добавлены</li>';
             return;
-        }
-        
-        words.forEach(wordObj => {
-            const li = document.createElement('li');
+          }
+
+          words.forEach((wordObj) => {
+            const li = document.createElement("li");
             li.innerHTML = `
-                <span>${wordObj.word}</span>
-                <div class="word-actions">
-                    <button class="translate" data-word="${wordObj.word}">Перевод</button>
-                    <button class="delete" data-word="${wordObj.word}">Удалить</button>
-                </div>
-            `;
+                        <span>${wordObj.word}</span>
+                        <div class="word-actions">
+                            <button class="translate" data-word="${wordObj.word}">Перевод</button>
+                            <button class="delete" data-word="${wordObj.word}">Удалить</button>
+                        </div>
+                    `;
             wordsList.appendChild(li);
-        });
-        
-        // Обработчики для кнопок в списке
-        document.querySelectorAll('.delete').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const wordToDelete = this.getAttribute('data-word');
-                deleteWord(wordToDelete);
+          });
+
+          // Обработчики для кнопок в списке
+          document.querySelectorAll(".delete").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const wordToDelete = this.getAttribute("data-word");
+              deleteWord(wordToDelete);
             });
-        });
-        
-        document.querySelectorAll('.translate').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const wordToTranslate = this.getAttribute('data-word');
-                showWordDetails(wordToTranslate);
+          });
+
+          document.querySelectorAll(".translate").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const wordToTranslate = this.getAttribute("data-word");
+              showWordDetails(wordToTranslate);
             });
-        });
-    }
-    
-    // Удаление слова
-    function deleteWord(word) {
-        let words = JSON.parse(localStorage.getItem('englishWords') || '[]');
-        words = words.filter(w => w.word !== word);
-        localStorage.setItem('englishWords', JSON.stringify(words));
-        
-        // Обновить текущую сессию, если слово было в ней
-        wordsForSession = wordsForSession.filter(w => w.word !== word);
-        
-        updateWordsList();
-        
-        // Вибрация при удалении
-        if ('vibrate' in navigator) {
+          });
+        }
+
+        // Удаление слова
+        function deleteWord(word) {
+          let words = JSON.parse(localStorage.getItem("englishWords") || "[]");
+          words = words.filter((w) => w.word !== word);
+          localStorage.setItem("englishWords", JSON.stringify(words));
+
+          // Обновить текущую сессию, если слово было в ней
+          wordsForSession = wordsForSession.filter((w) => w.word !== word);
+
+          updateWordsList();
+
+          // Вибрация при удалении
+          if ("vibrate" in navigator) {
             navigator.vibrate([30, 50, 30]);
+          }
         }
-    }
-    
-    // Показать детали слова
-    function showWordDetails(word) {
-        const words = JSON.parse(localStorage.getItem('englishWords') || '[]');
-        const wordObj = words.find(w => w.word === word);
-        
-        if (wordObj) {
+
+        // Показать детали слова
+        function showWordDetails(word) {
+          const words = JSON.parse(
+            localStorage.getItem("englishWords") || "[]"
+          );
+          const wordObj = words.find((w) => w.word === word);
+
+          if (wordObj) {
             // Создаем модальное окно для мобильных
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.left = '0';
-            modal.style.right = '0';
-            modal.style.bottom = '0';
-            modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
-            modal.style.zIndex = '1000';
-            modal.style.padding = '2rem';
-            modal.style.display = 'flex';
-            modal.style.flexDirection = 'column';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'center';
-            
+            const modal = document.createElement("div");
+            modal.style.position = "fixed";
+            modal.style.top = "0";
+            modal.style.left = "0";
+            modal.style.right = "0";
+            modal.style.bottom = "0";
+            modal.style.backgroundColor = "rgba(0,0,0,0.9)";
+            modal.style.zIndex = "1000";
+            modal.style.padding = "2rem";
+            modal.style.display = "flex";
+            modal.style.flexDirection = "column";
+            modal.style.justifyContent = "center";
+            modal.style.alignItems = "center";
+
             modal.innerHTML = `
-                <h2 style="font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1.5rem;">${wordObj.word}</h2>
-                <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; width: 100%; max-width: 500px;">
-                    <p><strong>Перевод:</strong> ${wordObj.translations.join(', ') || 'нет перевода'}</p>
-                    <p><strong>Синонимы:</strong> ${wordObj.synonyms.join(', ') || 'нет синонимов'}</p>
-                </div>
-                <button style="margin-top: 2rem; padding: 0.8rem 1.5rem; background: var(--error-color); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Закрыть</button>
-            `;
-            
+                        <h2 style="font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1.5rem;">${
+                          wordObj.word
+                        }</h2>
+                        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; width: 100%; max-width: 500px;">
+                            <p><strong>Перевод:</strong> ${
+                              wordObj.translations.join(", ") || "нет перевода"
+                            }</p>
+                            <p><strong>Синонимы:</strong> ${
+                              wordObj.synonyms.join(", ") || "нет синонимов"
+                            }</p>
+                        </div>
+                        <button style="margin-top: 2rem; padding: 0.8rem 1.5rem; background: var(--error-color); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Закрыть</button>
+                    `;
+
             document.body.appendChild(modal);
-            
+
             // Обработчик закрытия
-            modal.querySelector('button').addEventListener('click', function() {
+            modal
+              .querySelector("button")
+              .addEventListener("click", function () {
                 document.body.removeChild(modal);
-            });
-            
+              });
+
             // Закрытие по клику вне контента
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
+            modal.addEventListener("click", function (e) {
+              if (e.target === modal) {
+                document.body.removeChild(modal);
+              }
             });
+          }
         }
-    }
-    
-    // Логика карточек
-    function startCardSession() {
-        const words = JSON.parse(localStorage.getItem('englishWords') || '[]');
-        if (words.length === 0) {
-            wordDisplay.textContent = 'Нет слов для изучения';
-            showTranslationBtn.style.display = 'none';
-            translationDiv.style.display = 'none';
-            synonymsDiv.style.display = 'none';
+
+        // Логика карточек
+        function startCardSession() {
+          const words = JSON.parse(
+            localStorage.getItem("englishWords") || "[]"
+          );
+          if (words.length === 0) {
+            wordDisplay.textContent = "Нет слов для изучения";
+            showTranslationBtn.style.display = "none";
+            translationDiv.style.display = "none";
+            synonymsDiv.style.display = "none";
             return;
+          }
+
+          // Перемешать слова
+          wordsForSession = [...words].sort(() => Math.random() - 0.5);
+          currentCardIndex = 0;
+          showNextCard();
         }
-        
-        // Перемешать слова
-        wordsForSession = [...words].sort(() => Math.random() - 0.5);
-        currentCardIndex = 0;
-        showNextCard();
-    }
-    
-    function showNextCard() {
-        if (currentCardIndex >= wordsForSession.length) {
+
+        function showNextCard() {
+          if (currentCardIndex >= wordsForSession.length) {
             // Если все слова пройдены, начать заново
             startCardSession();
             return;
+          }
+
+          const currentWord = wordsForSession[currentCardIndex];
+          wordDisplay.textContent = currentWord.word;
+          translationDiv.classList.add("hidden");
+          synonymsDiv.classList.add("hidden");
+          showTranslationBtn.style.display = "block";
+
+          // Сбросить стили карточки
+          card.style.transform = "translateX(0) rotate(0deg)";
+          card.style.opacity = "1";
+          card.style.transition = "none";
+          swipeLeftMessage.style.opacity = "0";
+          swipeRightMessage.style.opacity = "0";
         }
-        
-        const currentWord = wordsForSession[currentCardIndex];
-        wordDisplay.textContent = currentWord.word;
-        translationDiv.classList.add('hidden');
-        synonymsDiv.classList.add('hidden');
-        showTranslationBtn.style.display = 'block';
-        
-        // Сбросить стили карточки
-        card.style.transform = 'translateX(0) rotate(0deg)';
-        card.style.opacity = '1';
-        card.style.transition = 'none';
-        swipeLeftMessage.style.opacity = '0';
-        swipeRightMessage.style.opacity = '0';
-    }
-    
-    // Показать перевод
-    showTranslationBtn.addEventListener('click', function() {
-        const currentWord = wordsForSession[currentCardIndex];
-        
-        // Генерация фиктивных данных, если их нет
-        if (currentWord.translations.length === 0) {
-            currentWord.translations = getDummyTranslation(currentWord.word);
-            // Сохраняем обновленные данные
-            updateWordInStorage(currentWord);
+
+        // Получение перевода через LibreTranslate (бесплатный API)
+        function getTranslation(word) {
+          const translation = prompt(`Введите перевод для слова "${word}":`);
+          return translation ? [translation] : ["перевод не указан"];
         }
-        
-        if (currentWord.synonyms.length === 0) {
-            currentWord.synonyms = getDummySynonyms(currentWord.word);
-            updateWordInStorage(currentWord);
+
+        // Получение синонимов через Datamuse API (бесплатный)
+        async function getSynonyms(word) {
+          try {
+            const response = await fetch(
+              `https://api.datamuse.com/words?rel_syn=${word}`
+            );
+            const data = await response.json();
+            return (
+              data.slice(0, 5).map((item) => item.word) || [
+                "синонимы не найдены",
+              ]
+            );
+          } catch (error) {
+            return ["синонимы не найдены"];
+          }
         }
-        
-        translationDiv.textContent = `Перевод: ${currentWord.translations.join(', ')}`;
-        synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(', ')}`;
-        
-        translationDiv.classList.remove('hidden');
-        synonymsDiv.classList.remove('hidden');
-        this.style.display = 'none';
-        
-        // Вибрация при показе перевода
-        if ('vibrate' in navigator) {
-            navigator.vibrate(30);
-        }
-    });
-    
-    // Обновить слово в хранилище
-    function updateWordInStorage(updatedWord) {
-        let words = JSON.parse(localStorage.getItem('englishWords') || '[]');
-        words = words.map(word => 
+
+        // Показать перевод
+        showTranslationBtn.addEventListener("click", async function (e) {
+          e.stopPropagation();
+          isTranslationButtonPressed = true;
+
+          const currentWord = wordsForSession[currentCardIndex];
+          const originalText = this.textContent;
+          this.innerHTML = `<span class="loading"></span> Загрузка...`;
+          this.disabled = true;
+
+          try {
+            if (currentWord.translations.length === 0) {
+              currentWord.translations = getTranslation(currentWord.word);
+              updateWordInStorage(currentWord);
+            }
+
+            if (currentWord.synonyms.length === 0) {
+              currentWord.synonyms = await getSynonyms(currentWord.word);
+              updateWordInStorage(currentWord);
+            }
+
+            translationDiv.textContent = `Перевод: ${currentWord.translations.join(
+              ", "
+            )}`;
+            synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(
+              ", "
+            )}`;
+
+            translationDiv.classList.remove("hidden");
+            synonymsDiv.classList.remove("hidden");
+            this.style.display = "none";
+
+            wordsForSession[currentCardIndex] = currentWord;
+            if ("vibrate" in navigator) navigator.vibrate(30);
+          } finally {
+            this.textContent = originalText;
+            this.disabled = false;
+            isTranslationButtonPressed = false;
+          }
+        });
+
+        // Обновить слово в хранилище
+        function updateWordInStorage(updatedWord) {
+          let words = JSON.parse(localStorage.getItem("englishWords") || "[]");
+          words = words.map((word) =>
             word.word === updatedWord.word ? updatedWord : word
-        );
-        localStorage.setItem('englishWords', JSON.stringify(words));
-    }
-    
-    // Обработка свайпов
-    card.addEventListener('touchstart', function(e) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        isDragging = true;
-        card.style.transition = 'none';
-    }, { passive: true });
-    
-    card.addEventListener('touchmove', function(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        
-        touchEndX = e.touches[0].clientX;
-        touchEndY = e.touches[0].clientY;
-        
-        const diffX = touchEndX - touchStartX;
-        const diffY = touchEndY - touchStartY;
-        
-        // Игнорируем вертикальные свайпы
-        if (Math.abs(diffY) > Math.abs(diffX)) return;
-        
-        const absDiffX = Math.abs(diffX);
-        const maxOffset = window.innerWidth / 3;
-        const offset = Math.min(absDiffX, maxOffset) * (diffX > 0 ? 1 : -1);
-        const rotate = offset / 20;
-        
-        card.style.transform = `translateX(${offset}px) rotate(${rotate}deg)`;
-        
-        // Показываем сообщения при смещении
-        if (diffX < 0) {
-            // Свайп влево (удаление)
-            const opacity = Math.min(absDiffX / 150, 0.9);
-            swipeLeftMessage.style.opacity = opacity;
-            swipeRightMessage.style.opacity = '0';
-        } else {
-            // Свайп вправо (повторить)
-            const opacity = Math.min(absDiffX / 150, 0.9);
-            swipeRightMessage.style.opacity = opacity;
-            swipeLeftMessage.style.opacity = '0';
+          );
+          localStorage.setItem("englishWords", JSON.stringify(words));
         }
-    }, { passive: false });
-    
-    card.addEventListener('touchend', function() {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        const diffX = touchEndX - touchStartX;
-        const absDiffX = Math.abs(diffX);
-        
-        // Порог для срабатывания свайпа
-        const threshold = window.innerWidth / 4;
-        
-        if (absDiffX > threshold) {
+
+        // Обработка свайпов
+        card.addEventListener(
+          "touchstart",
+          function (e) {
+            if (isTranslationButtonPressed) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isDragging = true;
+            card.style.transition = "none";
+          },
+          { passive: true }
+        );
+
+        card.addEventListener(
+          "touchmove",
+          function (e) {
+            if (!isDragging || isTranslationButtonPressed) return;
+            e.preventDefault();
+
+            touchEndX = e.touches[0].clientX;
+            touchEndY = e.touches[0].clientY;
+
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+
+            // Игнорируем вертикальные свайпы
+            if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+            const absDiffX = Math.abs(diffX);
+            const maxOffset = window.innerWidth / 3;
+            const offset = Math.min(absDiffX, maxOffset) * (diffX > 0 ? 1 : -1);
+            const rotate = offset / 20;
+
+            card.style.transform = `translateX(${offset}px) rotate(${rotate}deg)`;
+
+            // Показываем сообщения при смещении
             if (diffX < 0) {
+              // Свайп влево (удаление)
+              const opacity = Math.min(absDiffX / 150, 0.9);
+              swipeLeftMessage.style.opacity = opacity;
+              swipeRightMessage.style.opacity = "0";
+            } else {
+              // Свайп вправо (повторить)
+              const opacity = Math.min(absDiffX / 150, 0.9);
+              swipeRightMessage.style.opacity = opacity;
+              swipeLeftMessage.style.opacity = "0";
+            }
+          },
+          { passive: false }
+        );
+
+        card.addEventListener(
+          "touchend",
+          function () {
+            if (!isDragging || isTranslationButtonPressed) return;
+            isDragging = false;
+
+            const diffX = touchEndX - touchStartX;
+            const absDiffX = Math.abs(diffX);
+
+            // Порог для срабатывания свайпа
+            const threshold = window.innerWidth / 4;
+
+            if (absDiffX > threshold) {
+              if (diffX < 0) {
                 // Свайп влево - удалить слово
                 deleteCurrentWord();
-            } else {
+              } else {
                 // Свайп вправо - повторить слово
                 repeatCurrentWord();
+              }
+            } else {
+              // Возвращаем карточку на место
+              card.style.transition = "transform 0.3s ease-out";
+              card.style.transform = "translateX(0) rotate(0deg)";
+              swipeLeftMessage.style.opacity = "0";
+              swipeRightMessage.style.opacity = "0";
             }
-        } else {
-            // Возвращаем карточку на место
-            card.style.transition = 'transform 0.3s ease-out';
-            card.style.transform = 'translateX(0) rotate(0deg)';
-            swipeLeftMessage.style.opacity = '0';
-            swipeRightMessage.style.opacity = '0';
-        }
-    }, { passive: true });
-    
-    // Для десктопов (на случай тестирования на ПК)
-    card.addEventListener('mousedown', function(e) {
-        touchStartX = e.clientX;
-        touchStartY = e.clientY;
-        isDragging = true;
-        card.style.transition = 'none';
-        e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        
-        touchEndX = e.clientX;
-        touchEndY = e.clientY;
-        
-        const diffX = touchEndX - touchStartX;
-        const diffY = touchEndY - touchStartY;
-        
-        if (Math.abs(diffY) > Math.abs(diffX)) return;
-        
-        const absDiffX = Math.abs(diffX);
-        const maxOffset = window.innerWidth / 3;
-        const offset = Math.min(absDiffX, maxOffset) * (diffX > 0 ? 1 : -1);
-        const rotate = offset / 20;
-        
-        card.style.transform = `translateX(${offset}px) rotate(${rotate}deg)`;
-        
-        if (diffX < 0) {
+          },
+          { passive: true }
+        );
+
+        // Для десктопов (на случай тестирования на ПК)
+        card.addEventListener("mousedown", function (e) {
+          if (e.target === showTranslationBtn || isTranslationButtonPressed)
+            return;
+          touchStartX = e.clientX;
+          touchStartY = e.clientY;
+          isDragging = true;
+          card.style.transition = "none";
+          e.preventDefault();
+        });
+
+        document.addEventListener("mousemove", function (e) {
+          if (!isDragging || isTranslationButtonPressed) return;
+
+          touchEndX = e.clientX;
+          touchEndY = e.clientY;
+
+          const diffX = touchEndX - touchStartX;
+          const diffY = touchEndY - touchStartY;
+
+          if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+          const absDiffX = Math.abs(diffX);
+          const maxOffset = window.innerWidth / 3;
+          const offset = Math.min(absDiffX, maxOffset) * (diffX > 0 ? 1 : -1);
+          const rotate = offset / 20;
+
+          card.style.transform = `translateX(${offset}px) rotate(${rotate}deg)`;
+
+          if (diffX < 0) {
             const opacity = Math.min(absDiffX / 150, 0.9);
             swipeLeftMessage.style.opacity = opacity;
-            swipeRightMessage.style.opacity = '0';
-        } else {
+            swipeRightMessage.style.opacity = "0";
+          } else {
             const opacity = Math.min(absDiffX / 150, 0.9);
             swipeRightMessage.style.opacity = opacity;
-            swipeLeftMessage.style.opacity = '0';
-        }
-    });
-    
-    document.addEventListener('mouseup', function() {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        const diffX = touchEndX - touchStartX;
-        const absDiffX = Math.abs(diffX);
-        const threshold = window.innerWidth / 4;
-        
-        if (absDiffX > threshold) {
+            swipeLeftMessage.style.opacity = "0";
+          }
+        });
+
+        document.addEventListener("mouseup", function () {
+          if (!isDragging || isTranslationButtonPressed) return;
+          isDragging = false;
+
+          const diffX = touchEndX - touchStartX;
+          const absDiffX = Math.abs(diffX);
+          const threshold = window.innerWidth / 4;
+
+          if (absDiffX > threshold) {
             if (diffX < 0) {
-                deleteCurrentWord();
+              deleteCurrentWord();
             } else {
-                repeatCurrentWord();
+              repeatCurrentWord();
             }
-        } else {
-            card.style.transition = 'transform 0.3s ease-out';
-            card.style.transform = 'translateX(0) rotate(0deg)';
-            swipeLeftMessage.style.opacity = '0';
-            swipeRightMessage.style.opacity = '0';
-        }
-    });
-    
-    function deleteCurrentWord() {
-        const wordToDelete = wordsForSession[currentCardIndex].word;
-        
-        // Анимация удаления
-        card.style.transition = 'transform 0.4s ease-out, opacity 0.4s';
-        card.style.transform = 'translateX(-1000px) rotate(-30deg)';
-        card.style.opacity = '0';
-        
-        // Вибрация при удалении
-        if ('vibrate' in navigator) {
+          } else {
+            card.style.transition = "transform 0.3s ease-out";
+            card.style.transform = "translateX(0) rotate(0deg)";
+            swipeLeftMessage.style.opacity = "0";
+            swipeRightMessage.style.opacity = "0";
+          }
+        });
+
+        function deleteCurrentWord() {
+          const wordToDelete = wordsForSession[currentCardIndex].word;
+
+          // Анимация удаления
+          card.style.transition = "transform 0.4s ease-out, opacity 0.4s";
+          card.style.transform = "translateX(-1000px) rotate(-30deg)";
+          card.style.opacity = "0";
+
+          // Вибрация при удалении
+          if ("vibrate" in navigator) {
             navigator.vibrate([30, 50, 30]);
-        }
-        
-        setTimeout(() => {
+          }
+
+          setTimeout(() => {
             // Удаляем слово из хранилища
             deleteWord(wordToDelete);
-            
+
             // Удаляем из текущей сессии
-            wordsForSession = wordsForSession.filter((_, i) => i !== currentCardIndex);
-            if (currentCardIndex >= wordsForSession.length) currentCardIndex = 0;
+            wordsForSession = wordsForSession.filter(
+              (_, i) => i !== currentCardIndex
+            );
+            if (currentCardIndex >= wordsForSession.length)
+              currentCardIndex = 0;
             showNextCard();
-        }, 400);
-    }
-    
-    function repeatCurrentWord() {
-        // Анимация возврата
-        card.style.transition = 'transform 0.4s ease-out, opacity 0.4s';
-        card.style.transform = 'translateX(1000px) rotate(30deg)';
-        card.style.opacity = '0';
-        
-        // Вибрация при повторе
-        if ('vibrate' in navigator) {
-            navigator.vibrate(30);
+          }, 400);
         }
-        
-        setTimeout(() => {
+
+        function repeatCurrentWord() {
+          // Анимация возврата
+          card.style.transition = "transform 0.4s ease-out, opacity 0.4s";
+          card.style.transform = "translateX(1000px) rotate(30deg)";
+          card.style.opacity = "0";
+
+          // Вибрация при повторе
+          if ("vibrate" in navigator) {
+            navigator.vibrate(30);
+          }
+
+          setTimeout(() => {
             // Добавляем слово в конец списка для повторения
             wordsForSession.push(wordsForSession[currentCardIndex]);
             currentCardIndex++;
             showNextCard();
-        }, 400);
-    }
-    
-    // Фиктивные данные для демонстрации
-    function getDummyTranslation(word) {
-        const translations = {
-            'hello': ['привет', 'здравствуйте'],
-            'apple': ['яблоко'],
-            'steal': ['красть', 'воровать', 'украсть'],
-            'aside': ['в сторону', 'в стороне', 'помимо'],
-            'run': ['бежать', 'управлять', 'работать'],
-            'set': ['устанавливать', 'набор', 'комплект'],
-            'light': ['свет', 'легкий', 'освещать'],
-            'right': ['правильно', 'правый', 'право']
-        };
-        
-        return translations[word.toLowerCase()] || ['перевод не найден'];
-    }
-    
-    function getDummySynonyms(word) {
-        const synonyms = {
-            'hello': ['hi', 'greetings', 'hey'],
-            'apple': ['fruit', 'pome', 'macintosh'],
-            'steal': ['thieve', 'rob', 'pilfer', 'purloin'],
-            'aside': ['apart', 'away', 'separately', 'besides'],
-            'run': ['sprint', 'dash', 'operate', 'function'],
-            'set': ['collection', 'group', 'configure', 'adjust'],
-            'light': ['illumination', 'brightness', 'luminous', 'pale'],
-            'right': ['correct', 'proper', 'appropriate', 'privilege']
-        };
-        
-        return synonyms[word.toLowerCase()] || ['синонимы не найдены'];
-    }
-    
-    // Инициализация
-    if (!localStorage.getItem('englishWords')) {
-        localStorage.setItem('englishWords', JSON.stringify([]));
-    }
-    
-    // Показать первую страницу
-    pages.add.classList.remove('hidden');
-    
-    // Предотвращение скролла при свайпе
-    document.body.addEventListener('touchmove', function(e) {
-        if (isDragging) {
-            e.preventDefault();
+          }, 400);
         }
-    }, { passive: false });
-});
+
+        // Инициализация
+        if (!localStorage.getItem("englishWords")) {
+          localStorage.setItem("englishWords", JSON.stringify([]));
+        }
+
+        // Показать первую страницу
+        pages.add.classList.remove("hidden");
+
+        // Предотвращение скролла при свайпе
+        document.body.addEventListener(
+          "touchmove",
+          function (e) {
+            if (isDragging && !isTranslationButtonPressed) {
+              e.preventDefault();
+            }
+          },
+          { passive: false }
+        );
+      });
     </script>
-</body>
+  </body>
 </html>
