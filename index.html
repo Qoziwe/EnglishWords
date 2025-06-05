@@ -111,6 +111,37 @@
         margin-top: 0.5rem;
       }
 
+      /* Стили для переключателя языка */
+      .language-toggle {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 0.5rem;
+      }
+
+      .language-btn {
+        flex: 1;
+        padding: 0.8rem;
+        border: none;
+        background-color: transparent;
+        color: var(--text-color);
+        cursor: pointer;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: all 0.3s;
+      }
+
+      .language-btn.active {
+        background-color: var(--primary-color);
+        color: #000;
+      }
+
+      .language-btn:hover:not(.active) {
+        background-color: #333;
+      }
+
       #card-container {
         position: relative;
         width: 100%;
@@ -398,6 +429,12 @@ cup of tea - это по моей части
       </div>
 
       <div id="start" class="page hidden">
+        <!-- Переключатель языка -->
+        <div class="language-toggle">
+          <button class="language-btn active" data-lang="en">Английский</button>
+          <button class="language-btn" data-lang="ru">Русский</button>
+        </div>
+        
         <div id="card-container">
           <div id="card">
             <div class="word-display"></div>
@@ -435,6 +472,7 @@ cup of tea - это по моей части
         const translationDiv = document.querySelector(".translation");
         const synonymsDiv = document.querySelector(".synonyms");
         const wordsList = document.getElementById("words-list");
+        const languageButtons = document.querySelectorAll(".language-btn");
 
         // Сообщения при свайпе
         const swipeLeftMessage = document.querySelector(".swipe-message.left");
@@ -445,6 +483,8 @@ cup of tea - это по моей части
         // Переменные для свайпа
         let currentCardIndex = 0;
         let wordsForSession = [];
+        let sessionId = null; // ID текущей сессии
+        let currentLanguage = 'en'; // Текущий язык (en - английский, ru - русский)
         let touchStartX = 0;
         let touchStartY = 0;
         let touchEndX = 0;
@@ -465,6 +505,66 @@ cup of tea - это по моей части
             added: word.added || new Date().toISOString()
           }));
         }
+
+        // Функция для сохранения состояния сессии
+        function saveSessionState() {
+          if (!sessionId || wordsForSession.length === 0) return;
+          
+          const sessionState = {
+            sessionId: sessionId,
+            wordsForSession: wordsForSession,
+            currentCardIndex: currentCardIndex,
+            language: currentLanguage,
+            timestamp: Date.now()
+          };
+          
+          localStorage.setItem("cardSessionState", JSON.stringify(sessionState));
+        }
+
+        // Функция для загрузки состояния сессии
+        function loadSessionState() {
+          const savedState = localStorage.getItem("cardSessionState");
+          if (!savedState) return null;
+          
+          try {
+            const state = JSON.parse(savedState);
+            // Проверяем, что сессия не старше 24 часов
+            if (Date.now() - state.timestamp > 24 * 60 * 60 * 1000) {
+              localStorage.removeItem("cardSessionState");
+              return null;
+            }
+            return state;
+          } catch (error) {
+            localStorage.removeItem("cardSessionState");
+            return null;
+          }
+        }
+
+        // Функция для создания нового ID сессии
+        function generateSessionId() {
+          return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Обработчики переключателя языка
+        languageButtons.forEach(btn => {
+          btn.addEventListener('click', function() {
+            // Убираем активный класс у всех кнопок
+            languageButtons.forEach(b => b.classList.remove('active'));
+            // Добавляем активный класс к нажатой кнопке
+            this.classList.add('active');
+            
+            // Обновляем текущий язык
+            currentLanguage = this.getAttribute('data-lang');
+            
+            // Сохраняем состояние сессии
+            saveSessionState();
+            
+            // Обновляем текущую карточку
+            if (wordsForSession.length > 0 && currentCardIndex < wordsForSession.length) {
+              updateCardDisplay();
+            }
+          });
+        });
 
         // Переключение страниц
         navButtons.forEach((btn) => {
@@ -555,6 +655,15 @@ cup of tea - это по моей части
           // Сохранить обновленный список
           localStorage.setItem("englishWords", JSON.stringify(currentWords));
           wordsTextarea.value = "";
+
+          // Если есть активная сессия, добавляем новые слова в конец
+          if (sessionId && wordsForSession.length > 0) {
+            const newWords = currentWords.filter(word => 
+              !wordsForSession.some(sessionWord => sessionWord.word === word.word)
+            );
+            wordsForSession.push(...newWords);
+            saveSessionState();
+          }
 
           // Показать уведомление на мобильных
           if ("vibrate" in navigator) {
@@ -670,6 +779,13 @@ cup of tea - это по моей части
               wordObj.synonyms = synonyms;
               updateWordInStorage(wordObj);
 
+              // Обновляем слово в текущей сессии, если оно там есть
+              const sessionWordIndex = wordsForSession.findIndex(w => w.word === wordObj.word);
+              if (sessionWordIndex >= 0) {
+                wordsForSession[sessionWordIndex] = {...wordObj};
+                saveSessionState();
+              }
+
               // Закрываем модальное окно
               document.body.removeChild(modal);
 
@@ -755,7 +871,39 @@ cup of tea - это по моей части
 
         // Логика карточек
         function startCardSession() {
-          // ВСЕГДА получаем свежие данные из localStorage
+          // Пытаемся загрузить сохраненную сессию
+          const savedSession = loadSessionState();
+          
+          if (savedSession && savedSession.wordsForSession.length > 0) {
+            // Восстанавливаем сохраненную сессию
+            sessionId = savedSession.sessionId;
+            wordsForSession = savedSession.wordsForSession;
+            currentCardIndex = savedSession.currentCardIndex;
+            currentLanguage = savedSession.language;
+            
+            // Обновляем переключатель языка
+            languageButtons.forEach(btn => {
+              btn.classList.toggle('active', btn.getAttribute('data-lang') === currentLanguage);
+            });
+            
+            // Проверяем, что все слова из сессии еще существуют в основном хранилище
+            const currentWords = getWordsFromStorage();
+            wordsForSession = wordsForSession.filter(sessionWord => 
+              currentWords.some(word => word.word === sessionWord.word)
+            );
+            
+            // Если после фильтрации остались слова, продолжаем сессию
+            if (wordsForSession.length > 0) {
+              // Корректируем индекс если нужно
+              if (currentCardIndex >= wordsForSession.length) {
+                currentCardIndex = 0;
+              }
+              showNextCard();
+              return;
+            }
+          }
+          
+          // Создаем новую сессию
           const words = getWordsFromStorage();
           
           if (words.length === 0) {
@@ -766,7 +914,8 @@ cup of tea - это по моей части
             return;
           }
 
-          // Создаем глубокую копию и перемешиваем
+          // Создаем новую сессию с перемешанными словами
+          sessionId = generateSessionId();
           wordsForSession = words.map(word => ({
             word: word.word,
             translations: [...word.translations],
@@ -776,7 +925,32 @@ cup of tea - это по моей части
           
           currentCardIndex = 0;
           isProcessingSwipe = false;
+          
+          // Сохраняем состояние новой сессии
+          saveSessionState();
+          
           showNextCard();
+        }
+
+        // Обновление отображения карточки в зависимости от языка
+        function updateCardDisplay() {
+          if (wordsForSession.length === 0 || currentCardIndex >= wordsForSession.length) {
+            return;
+          }
+
+          const currentWord = wordsForSession[currentCardIndex];
+          
+          if (currentLanguage === 'en') {
+            // Английский режим: показываем английское слово
+            wordDisplay.textContent = currentWord.word;
+          } else {
+            // Русский режим: показываем русский перевод
+            if (currentWord.translations && currentWord.translations.length > 0) {
+              wordDisplay.textContent = currentWord.translations[0];
+            } else {
+              wordDisplay.textContent = currentWord.word + " (нет перевода)";
+            }
+          }
         }
 
         function showNextCard() {
@@ -785,6 +959,10 @@ cup of tea - это по моей части
             showTranslationBtn.style.display = "none";
             translationDiv.style.display = "none";
             synonymsDiv.style.display = "none";
+            
+            // Очищаем сохраненную сессию
+            localStorage.removeItem("cardSessionState");
+            sessionId = null;
             return;
           }
 
@@ -800,7 +978,9 @@ cup of tea - это по моей части
             return;
           }
 
-          wordDisplay.textContent = currentWord.word;
+          // Обновляем отображение в зависимости от выбранного языка
+          updateCardDisplay();
+          
           translationDiv.classList.add("hidden");
           synonymsDiv.classList.add("hidden");
           showTranslationBtn.style.display = "block";
@@ -816,6 +996,9 @@ cup of tea - это по моей части
           isProcessingSwipe = false;
           isDragging = false;
           hasMoved = false;
+          
+          // Сохраняем состояние сессии
+          saveSessionState();
         }
 
         // Получение перевода через prompt
@@ -864,7 +1047,7 @@ cup of tea - это по моей части
 
           const currentWord = wordsForSession[currentCardIndex];
           const originalText = this.textContent;
-          this.innerHTML = `<span class="loading"></span> Загрузка...`;
+          this.innerHTML = '<span class="loading"></span> Загрузка...';
           this.disabled = true;
 
           try {
@@ -881,6 +1064,7 @@ cup of tea - это по моей части
               updateWordInStorage(currentWord);
               // Обновляем слово в сессии
               wordsForSession[currentCardIndex] = currentWord;
+              saveSessionState();
             }
 
             // Проверяем синонимы
@@ -889,11 +1073,19 @@ cup of tea - это по моей части
               updateWordInStorage(currentWord);
               // Обновляем слово в сессии
               wordsForSession[currentCardIndex] = currentWord;
+              saveSessionState();
             }
 
-            // Показываем перевод и синонимы
-            translationDiv.textContent = `Перевод: ${currentWord.translations.join(", ")}`;
-            synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(", ")}`;
+            // Показываем перевод и синонимы в зависимости от режима
+            if (currentLanguage === 'en') {
+              // Английский режим: показываем русский перевод
+              translationDiv.textContent = `Перевод: ${currentWord.translations.join(", ")}`;
+              synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(", ")}`;
+            } else {
+              // Русский режим: показываем английское слово и синонимы
+              translationDiv.textContent = `Английский: ${currentWord.word}`;
+              synonymsDiv.textContent = `Синонимы: ${currentWord.synonyms.join(", ")}`;
+            }
 
             translationDiv.classList.remove("hidden");
             synonymsDiv.classList.remove("hidden");
@@ -1036,13 +1228,16 @@ cup of tea - это по моей части
               words = words.filter((w) => w.word !== wordToDelete);
               localStorage.setItem("englishWords", JSON.stringify(words));
 
-              // ИСПРАВЛЕНИЕ: Удаляем ВСЕ вхождения этого слова из текущей сессии
+              // Удаляем ВСЕ вхождения этого слова из текущей сессии
               wordsForSession = wordsForSession.filter((w) => w.word !== wordToDelete);
               
               // Корректируем индекс если нужно
               if (currentCardIndex >= wordsForSession.length) {
                 currentCardIndex = 0;
               }
+              
+              // Сохраняем обновленное состояние сессии
+              saveSessionState();
               
               showNextCard();
             } catch (error) {
@@ -1070,10 +1265,13 @@ cup of tea - это по моей части
             try {
               // Добавляем текущее слово в конец списка для повторения
               const currentWord = wordsForSession[currentCardIndex];
-              wordsForSession.push(currentWord);
+              wordsForSession.push({...currentWord});
               
               // Переходим к следующему слову
               currentCardIndex++;
+              
+              // Сохраняем обновленное состояние сессии
+              saveSessionState();
               
               showNextCard();
             } catch (error) {
