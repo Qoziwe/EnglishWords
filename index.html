@@ -111,6 +111,35 @@
         margin-top: 0.5rem;
       }
 
+      /* Стили для поиска слов */
+      #search-input {
+        width: 100%;
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid #333;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+      }
+
+      #search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+
+      #search-input::placeholder {
+        color: #888;
+      }
+
+      .search-stats {
+        margin-bottom: 1rem;
+        color: #888;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
       /* Стили для переключателя языка */
       .language-toggle {
         display: flex;
@@ -246,6 +275,27 @@
         justify-content: space-between;
         align-items: center;
         font-size: 1.1rem;
+        transition: all 0.3s;
+      }
+
+      #words-list li.highlight {
+        border: 2px solid var(--primary-color);
+        background-color: rgba(187, 134, 252, 0.1);
+      }
+
+      .word-info {
+        flex: 1;
+        margin-right: 1rem;
+      }
+
+      .word-title {
+        font-weight: bold;
+        margin-bottom: 0.3rem;
+      }
+
+      .word-translations {
+        font-size: 0.9rem;
+        color: #aaa;
       }
 
       .word-actions {
@@ -281,6 +331,13 @@
         text-align: center;
         padding: 2rem;
         color: #888;
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #888;
+        font-style: italic;
       }
 
       @keyframes cardSwipeLeft {
@@ -449,6 +506,15 @@ cup of tea - это по моей части
 
       <div id="words" class="page hidden">
         <h2>Ваши слова</h2>
+        <!-- Поле поиска -->
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Поиск по словам и переводам..."
+          autocomplete="off"
+        />
+        <!-- Статистика поиска -->
+        <div class="search-stats" id="search-stats"></div>
         <ul id="words-list"></ul>
       </div>
     </main>
@@ -473,6 +539,8 @@ cup of tea - это по моей части
         const synonymsDiv = document.querySelector(".synonyms");
         const wordsList = document.getElementById("words-list");
         const languageButtons = document.querySelectorAll(".language-btn");
+        const searchInput = document.getElementById("search-input");
+        const searchStats = document.getElementById("search-stats");
 
         // Сообщения при свайпе
         const swipeLeftMessage = document.querySelector(".swipe-message.left");
@@ -485,6 +553,9 @@ cup of tea - это по моей части
         let wordsForSession = [];
         let sessionId = null; // ID текущей сессии
         let currentLanguage = 'en'; // Текущий язык (en - английский, ru - русский)
+        let allWords = []; // Все слова для поиска
+        let filteredWords = []; // Отфильтрованные слова
+        let searchQuery = ''; // Текущий поисковый запрос
         let touchStartX = 0;
         let touchStartY = 0;
         let touchEndX = 0;
@@ -504,6 +575,64 @@ cup of tea - это по моей части
             synonyms: Array.isArray(word.synonyms) ? word.synonyms : [],
             added: word.added || new Date().toISOString()
           }));
+        }
+
+        // Функция поиска слов
+        function searchWords(query) {
+          if (!query.trim()) {
+            return allWords;
+          }
+
+          const searchTerm = query.toLowerCase().trim();
+          
+          return allWords.filter(wordObj => {
+            // Поиск по самому слову
+            if (wordObj.word.toLowerCase().includes(searchTerm)) {
+              return true;
+            }
+            
+            // Поиск по переводам
+            if (wordObj.translations.some(translation => 
+              translation.toLowerCase().includes(searchTerm)
+            )) {
+              return true;
+            }
+            
+            // Поиск по синонимам
+            if (wordObj.synonyms.some(synonym => 
+              synonym.toLowerCase().includes(searchTerm)
+            )) {
+              return true;
+            }
+            
+            return false;
+          });
+        }
+
+        // Обработчик поиска
+        searchInput.addEventListener('input', function() {
+          searchQuery = this.value;
+          filteredWords = searchWords(searchQuery);
+          updateWordsList();
+          updateSearchStats();
+        });
+
+        // Обновление статистики поиска
+        function updateSearchStats() {
+          const totalWords = allWords.length;
+          const foundWords = filteredWords.length;
+          
+          if (searchQuery.trim()) {
+            if (foundWords === 0) {
+              searchStats.textContent = `Ничего не найдено из ${totalWords} слов`;
+            } else if (foundWords === totalWords) {
+              searchStats.textContent = `Показаны все ${totalWords} слов`;
+            } else {
+              searchStats.textContent = `Найдено ${foundWords} из ${totalWords} слов`;
+            }
+          } else {
+            searchStats.textContent = totalWords > 0 ? `Всего слов: ${totalWords}` : '';
+          }
         }
 
         // Функция для сохранения состояния сессии
@@ -582,7 +711,12 @@ cup of tea - это по моей части
 
             // Если это страница слов, обновить список
             if (target === "words") {
+              allWords = getWordsFromStorage();
+              filteredWords = searchWords(searchQuery);
               updateWordsList();
+              updateSearchStats();
+              // Фокус на поле поиска для удобства
+              setTimeout(() => searchInput.focus(), 100);
             }
 
             // Если это страница карточек, начать сессию
@@ -672,31 +806,55 @@ cup of tea - это по моей части
 
           // Обновить список слов, если мы на этой странице
           if (!pages.words.classList.contains("hidden")) {
+            allWords = getWordsFromStorage();
+            filteredWords = searchWords(searchQuery);
             updateWordsList();
+            updateSearchStats();
           }
         });
 
         // Обновление списка слов
         function updateWordsList() {
-          const words = getWordsFromStorage();
           wordsList.innerHTML = "";
 
-          if (words.length === 0) {
+          if (allWords.length === 0) {
             wordsList.innerHTML =
               '<li class="empty-message">Слова не добавлены</li>';
             return;
           }
 
-          words.forEach((wordObj) => {
+          if (filteredWords.length === 0 && searchQuery.trim()) {
+            wordsList.innerHTML =
+              '<li class="no-results">По вашему запросу ничего не найдено</li>';
+            return;
+          }
+
+          const wordsToShow = filteredWords.length > 0 ? filteredWords : allWords;
+
+          wordsToShow.forEach((wordObj) => {
             const li = document.createElement("li");
+            
+            // Проверяем, соответствует ли слово поисковому запросу для подсветки
+            const isMatch = searchQuery.trim() && (
+              wordObj.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              wordObj.translations.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+            
+            if (isMatch) {
+              li.classList.add('highlight');
+            }
+            
             li.innerHTML = `
-                        <span>${wordObj.word}</span>
-                        <div class="word-actions">
-                            <button class="translate" data-word="${wordObj.word}">Перевод</button>
-                            <button class="edit" data-word="${wordObj.word}">Изменить</button>
-                            <button class="delete" data-word="${wordObj.word}">Удалить</button>
-                        </div>
-                    `;
+              <div class="word-info">
+                <div class="word-title">${wordObj.word}</div>
+                <div class="word-translations">${wordObj.translations.join(", ") || "нет перевода"}</div>
+              </div>
+              <div class="word-actions">
+                <button class="translate" data-word="${wordObj.word}">Перевод</button>
+                <button class="edit" data-word="${wordObj.word}">Изменить</button>
+                <button class="delete" data-word="${wordObj.word}">Удалить</button>
+              </div>
+            `;
             wordsList.appendChild(li);
           });
 
@@ -789,8 +947,11 @@ cup of tea - это по моей части
               // Закрываем модальное окно
               document.body.removeChild(modal);
 
-              // Обновляем список слов
+              // Обновляем данные и список
+              allWords = getWordsFromStorage();
+              filteredWords = searchWords(searchQuery);
               updateWordsList();
+              updateSearchStats();
             });
 
           // Закрытие по клику вне контента
@@ -807,7 +968,11 @@ cup of tea - это по моей части
           words = words.filter((w) => w.word !== word);
           localStorage.setItem("englishWords", JSON.stringify(words));
 
+          // Обновляем данные для поиска
+          allWords = words;
+          filteredWords = searchWords(searchQuery);
           updateWordsList();
+          updateSearchStats();
 
           // Вибрация при удалении
           if ("vibrate" in navigator) {
